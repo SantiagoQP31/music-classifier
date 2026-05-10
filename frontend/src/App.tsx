@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { ClassificationResult, RecorderStatus } from "./types";
-import { RecorderPanel } from './components/RecorderPanel';
-import { ResultPanel } from './components/ResultPanel';
+import { RecorderPanel } from "./components/RecorderPanel/RecorderPanel";
+import { ResultPanel } from './components/ResultPanel/ResultPanel';
 
 export default function App() {
   const [status, setStatus] = useState<RecorderStatus>('idle');
