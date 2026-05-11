@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ClassificationResult, RecorderStatus } from "./types";
 import { RecorderPanel } from "./components/RecorderPanel/RecorderPanel";
 import { ResultPanel } from './components/ResultPanel/ResultPanel';
+import './App.css';
 
 export default function App() {
   const [status, setStatus] = useState<RecorderStatus>('idle');
@@ -9,7 +10,7 @@ export default function App() {
 
   const handleResult = (data: ClassificationResult) => {
     setResult(data);
-    setStatus('idle');
+    setStatus('result');
   }
 
   const handleReset = () => {
@@ -17,19 +18,22 @@ export default function App() {
     setStatus('idle');
   }
 
+  const hasResult = status === 'result' && result !== null;
+
   return (
-    <main className="app">
-      <RecorderPanel 
-        status={status}
-        setStatus={setStatus}
-        onResult={handleResult}
-      />
-      {status === 'result' && result && (
-        <ResultPanel 
-          result={result}
-          onReset={handleReset}
+    <main className={`app ${hasResult ? 'app--has-result' : ''}`}>
+      <div className="app__recorder">
+        <RecorderPanel
+          status={status}
+          setStatus={setStatus}
+          onResult={handleResult}
         />
+      </div>
+      {hasResult && (
+        <div className="app__result">
+          <ResultPanel result={result} onReset={handleReset} />
+        </div>
       )}
     </main>
-  )
+  );
 }

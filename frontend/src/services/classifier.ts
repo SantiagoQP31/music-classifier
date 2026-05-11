@@ -1,18 +1,30 @@
-import { API_BASE_URL } from "../constants";
-import type { ClassificationResult } from "../types";
+import { API_BASE_URL } from '../constants';
+import type { ClassificationResult } from '../types';
+
+const MOCK_ENABLED = true;
+
+const MOCK_RESULT: ClassificationResult = {
+  genre: 'Jazz',
+  confidence: 0.87,
+};
 
 export async function classifyAudio(audioBlob: Blob): Promise<ClassificationResult> {
-    const formData = new FormData();
-    formData.append('file', audioBlob, 'recording.webm');
+  if (MOCK_ENABLED) {
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    return MOCK_RESULT;
+  }
 
-    const response = await fetch(`${API_BASE_URL}/classify`, {
-        method: 'POST',
-        body: formData
-    });
+  const formData = new FormData();
+  formData.append('file', audioBlob, 'recording.webm');
 
-    if (!response.ok) {
-        throw new Error(`Classification failed with status ${response.status}`);
-    }
+  const response = await fetch(`${API_BASE_URL}/classify`, {
+    method: 'POST',
+    body: formData,
+  });
 
-    return response.json() as Promise<ClassificationResult>;
+  if (!response.ok) {
+    throw new Error(`Classification failed with status ${response.status}`);
+  }
+
+  return response.json() as Promise<ClassificationResult>;
 }
