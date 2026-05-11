@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useState } from 'react';
 import type { RecorderStatus, ClassificationResult } from '../types';
 import { classifyAudio } from '../services/classifier';
 import { RECORDING_DURATION_MS } from '../constants';
@@ -10,6 +10,7 @@ interface UseAudioRecorderProps {
 
 interface UseAudioRecorderReturn {
   startRecording: () => Promise<void>;
+  stream: MediaStream | null;
 }
 
 export function useAudioRecorder({
@@ -18,16 +19,18 @@ export function useAudioRecorder({
 }: UseAudioRecorderProps): UseAudioRecorderReturn {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef        = useRef<Blob[]>([]);
+  const [stream, setStream] = useState<MediaStream | null>(null);
 
   const startRecording = useCallback(async () => {
     try {
       setStatus('requesting-permission');
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      setStream(mediaStream);
       setStatus('recording');
 
-      const mediaRecorder = new MediaRecorder(stream);
+      const mediaRecorder = new MediaRecorder(mediaStream);
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
@@ -38,7 +41,8 @@ export function useAudioRecorder({
       };
 
       mediaRecorder.onstop = async () => {
-        stream.getTracks().forEach(track => track.stop());
+        mediaStream.getTracks().forEach(track => track.stop());
+        setStream(null);
 
         const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
 
@@ -64,5 +68,5 @@ export function useAudioRecorder({
     }
   }, [setStatus, onResult]);
 
-  return { startRecording };
+  return { startRecording, stream };
 }
