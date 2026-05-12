@@ -1,7 +1,7 @@
 import { API_BASE_URL } from '../constants';
 import type { ClassificationResult } from '../types';
 
-const MOCK_ENABLED = true;
+const MOCK_ENABLED = false;
 
 const MOCK_RESULT: ClassificationResult = {
   genre: 'Jazz',
