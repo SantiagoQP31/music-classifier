@@ -7,13 +7,12 @@ export type Genre =
     | 'Rock'
     | 'Vallenato';
     
-export type RecorderStatus = 
+export type Stage =
     | 'idle'
-    | 'requesting-permission'
     | 'recording'
     | 'processing'
     | 'result'
-    | 'error';
+    | 'detail';
 
 export interface ClassificationResult {
     genre: Genre;

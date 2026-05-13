@@ -1,20 +1,20 @@
 import { useRef, useCallback, useState } from 'react';
-import type { RecorderStatus, ClassificationResult } from '../types';
+import type { Stage, ClassificationResult } from '../types';
 import { classifyAudio } from '../services/classifier';
 import { RECORDING_DURATION_MS } from '../constants';
 
 interface UseAudioRecorderProps {
-  setStatus: (status: RecorderStatus) => void;
-  onResult:  (result: ClassificationResult) => void;
+  setStage: (stage: Stage) => void;
+  onResult: (result: ClassificationResult) => void;
 }
 
 interface UseAudioRecorderReturn {
   startRecording: () => Promise<void>;
-  stream: MediaStream | null;
+  stream:         MediaStream | null;
 }
 
 export function useAudioRecorder({
-  setStatus,
+  setStage,
   onResult,
 }: UseAudioRecorderProps): UseAudioRecorderReturn {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -23,12 +23,10 @@ export function useAudioRecorder({
 
   const startRecording = useCallback(async () => {
     try {
-      setStatus('requesting-permission');
+      setStage('recording');
 
       const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      
       setStream(mediaStream);
-      setStatus('recording');
 
       const mediaRecorder = new MediaRecorder(mediaStream);
       mediaRecorderRef.current = mediaRecorder;
@@ -47,11 +45,11 @@ export function useAudioRecorder({
         const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
 
         try {
-          setStatus('processing');
+          setStage('processing');
           const result = await classifyAudio(audioBlob);
           onResult(result);
         } catch {
-          setStatus('error');
+          setStage('idle');
         }
       };
 
@@ -64,9 +62,9 @@ export function useAudioRecorder({
       }, RECORDING_DURATION_MS);
 
     } catch {
-      setStatus('error');
+      setStage('idle');
     }
-  }, [setStatus, onResult]);
+  }, [setStage, onResult]);
 
   return { startRecording, stream };
 }
