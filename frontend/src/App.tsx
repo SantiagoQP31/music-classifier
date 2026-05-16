@@ -1,53 +1,79 @@
-import { useState, useEffect } from "react";
-import type { ClassificationResult, RecorderStatus } from "./types";
-import { GENRE_INFO } from "./constants";
-import { RecorderPanel } from "./components/RecorderPanel/RecorderPanel";
-import { ResultPanel } from './components/ResultPanel/ResultPanel';
+import { useState, useEffect } from 'react';
+import type { Stage, ClassificationResult } from './types';
+import { GENRE_INFO } from './constants';
+import { ProgressBar } from './components/ProgressBar/ProgressBar';
+import { StageIdle }       from './components/stages/StageIdle/StageIdle';
+import { StageRecording }  from './components/stages/StageRecording/StageRecording';
+import { StageProcessing } from './components/stages/StageProcessing/StageProcessing';
+import { StageResult }     from './components/stages/StageResult/StageResult';
+import { StageDetail }     from './components/stages/StageDetail/StageDetail';
 import './App.css';
 
 export default function App() {
-  const [status, setStatus] = useState<RecorderStatus>('idle');
+  const [stage, setStage]   = useState<Stage>('idle');
   const [result, setResult] = useState<ClassificationResult | null>(null);
-  
-  const hasResult = status === 'result' && result !== null;
 
   useEffect(() => {
     const root = document.documentElement;
-    if (hasResult && result) {
-      root.style.setProperty('--genre-color', GENRE_INFO[result.genre].color);
-      root.style.setProperty('--genre-color-rgb', hexToRgb(GENRE_INFO[result.genre].color));
+    if (result) {
+      const info = GENRE_INFO[result.genre];
+      root.style.setProperty('--genre-color', info.color);
+      root.style.setProperty('--genre-color-rgb', hexToRgb(info.color));
     } else {
       root.style.setProperty('--genre-color', '#7C3AED');
       root.style.setProperty('--genre-color-rgb', '124, 58, 237');
     }
-  }, [hasResult, result]);
+  }, [result]);
 
   const handleResult = (data: ClassificationResult) => {
     setResult(data);
-    setStatus('result');
-  }
+    setStage('result');
+  };
 
   const handleReset = () => {
     setResult(null);
-    setStatus('idle');
-  }
+    setStage('idle');
+  };
 
+  const renderStage = () => {
+    switch (stage) {
+      case 'idle':
+        return <StageIdle onStart={() => setStage('recording')} />;
+      case 'recording':
+        return (
+          <StageRecording
+            onResult={handleResult}
+            setStage={setStage}
+          />
+        );
+      case 'processing':
+        return <StageProcessing />;
+      case 'result':
+        return result ? (
+          <StageResult
+            result={result}
+            onContinue={() => setStage('detail')}
+            onReset={handleReset}
+          />
+        ) : null;
+      case 'detail':
+        return result ? (
+          <StageDetail
+            result={result}
+            onReset={handleReset}
+          />
+        ) : null;
+    }
+  };
 
   return (
-    <main className={`app ${hasResult ? 'app--has-result' : ''} app--${status}`}>
+    <main className={`app app--${stage}`}>
       <div className="app__noise" aria-hidden="true" />
-      <div className="app__recorder">
-        <RecorderPanel
-          status={status}
-          setStatus={setStatus}
-          onResult={handleResult}
-        />
+      <div className="app__ambient" aria-hidden="true" />
+      <ProgressBar currentStage={stage} />
+      <div className="app__content">
+        {renderStage()}
       </div>
-      {hasResult && result && (
-        <div className="app__result">
-          <ResultPanel result={result} onReset={handleReset} />
-        </div>
-      )}
     </main>
   );
 }

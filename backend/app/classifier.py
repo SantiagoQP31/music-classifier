@@ -1,6 +1,12 @@
 import random
+import shutil
 import numpy as np
 import librosa
+import io
+import tempfile
+import os
+import subprocess
+
 from app.schemas import ClassificationResponse, Genre
 
 GENRES: list[Genre] = [
@@ -19,7 +25,7 @@ def extract_features(audio: np.ndarray, sr: int) -> np.ndarray:
     chroma        = librosa.feature.chroma_stft(y=audio, sr=sr)
 
     features = [
-        librosa.feature.rhythm.tempo(y=audio, sr=sr)[0],
+        librosa.beat.tempo(y=audio, sr=sr)[0],
         librosa.feature.spectral_centroid(y=audio, sr=sr).mean(),
         librosa.feature.spectral_bandwidth(y=audio, sr=sr).mean(),
         librosa.feature.spectral_rolloff(y=audio, sr=sr).mean(),
@@ -35,10 +41,12 @@ def extract_features(audio: np.ndarray, sr: int) -> np.ndarray:
     return np.array(features, dtype=np.float32)
 
 def classify(audio_bytes: bytes) -> ClassificationResponse:
-    import io
-    import tempfile
-    import os
-    import subprocess
+    ffmpeg_path = shutil.which('ffmpeg')
+    if ffmpeg_path is None:
+        raise RuntimeError(
+            'ffmpeg no está instalado o no está en el PATH del sistema. '
+            'Instálalo desde https://ffmpeg.org/download.html'
+        )
 
     with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as tmp_in:
         tmp_in.write(audio_bytes)
@@ -47,7 +55,6 @@ def classify(audio_bytes: bytes) -> ClassificationResponse:
     tmp_out_path = tmp_in_path.replace('.webm', '.wav')
 
     try:
-        ffmpeg_path = r'C:\Users\santi\AppData\Local\Microsoft\WinGet\Links\ffmpeg.exe'
         subprocess.run(
             [ffmpeg_path, '-y', '-i', tmp_in_path, tmp_out_path],
             check=True,
